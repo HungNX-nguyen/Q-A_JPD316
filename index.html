@@ -2,60 +2,112 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Random Question</title>
+
   <style>
     body {
-      font-family: Arial;
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 16px;
+      background: #f2f2f7;
+    }
+
+    h2 {
       text-align: center;
-      padding: 40px;
-      background: #f5f5f5;
-    }
-    textarea {
-      width: 80%;
-      height: 120px;
-      margin-bottom: 20px;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 16px;
-      margin: 10px;
-      cursor: pointer;
-    }
-    #result {
-      margin-top: 30px;
       font-size: 22px;
-      font-weight: bold;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+      margin-bottom: 12px;
+    }
+
+    .button-group {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 12px;
+      border: none;
+      background: #007aff;
+      color: white;
+    }
+
+    button:active {
+      opacity: 0.7;
+    }
+
+    .danger {
+      background: #ff3b30;
+    }
+
+    #result {
+      margin-top: 20px;
+      padding: 16px;
+      background: white;
+      border-radius: 12px;
+      font-size: 18px;
+      min-height: 60px;
+    }
+
+    #listContainer {
+      margin-top: 20px;
+      background: white;
+      border-radius: 12px;
+      padding: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    li {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      font-size: 15px;
+    }
+
+    li:active {
+      background: #f0f0f0;
     }
   </style>
 </head>
+
 <body>
 
 <h2>🎯 Random Câu Hỏi</h2>
 
 <textarea id="questionList" placeholder="Nhập mỗi câu 1 dòng..."></textarea>
-<br>
 
-<button onclick="start()">▶ Bắt đầu</button>
-<button onclick="nextQuestion()">🎲 Câu tiếp</button>
-<button onclick="speak()">🔊 Đọc</button>
-<button onclick="toggleList()">📋 Xem danh sách</button>
-<button onclick="clearAll()" style="background:red; color:white;">
-  🗑 Xóa tất cả
-</button>
-
-<div id="listContainer" style="display:none; margin-top:20px;">
-  <h3>Danh sách câu hỏi</h3>
-  <ul id="questionListView"></ul>
+<div class="button-group">
+  <button onclick="start()">▶ Bắt đầu</button>
+  <button onclick="nextAndSpeak()">🎲 Câu tiếp</button>
+  <button onclick="speak()">🔊 Đọc</button>
+  <button onclick="toggleList()">📋 Danh sách</button>
+  <button class="danger" onclick="clearAll()">🗑 Xóa</button>
 </div>
 
 <div id="result">Câu hỏi sẽ hiện ở đây</div>
+
+<div id="listContainer" style="display:none;">
+  <ul id="questionListView"></ul>
+</div>
 
 <script>
 let shuffled = [];
 let index = 0;
 let currentQuestion = "";
 
-// Load từ localStorage khi mở trang
+// load
 window.onload = function () {
   const saved = localStorage.getItem("questions");
   if (saved) {
@@ -63,12 +115,12 @@ window.onload = function () {
   }
 };
 
-// Lưu vào localStorage khi nhập
+// save
 document.getElementById("questionList").addEventListener("input", function () {
   localStorage.setItem("questions", this.value);
 });
 
-// Fisher-Yates shuffle
+// shuffle
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -76,7 +128,6 @@ function shuffle(array) {
   }
 }
 
-// Bắt đầu (shuffle list)
 function start() {
   const text = document.getElementById("questionList").value;
   const questions = text.split("\n").filter(q => q.trim() !== "");
@@ -93,8 +144,7 @@ function start() {
   showQuestion();
 }
 
-// Hiển thị câu tiếp theo (không lặp)
-function nextQuestion() {
+function nextAndSpeak() {
   if (shuffled.length === 0) {
     alert("Bấm 'Bắt đầu' trước!");
     return;
@@ -103,30 +153,30 @@ function nextQuestion() {
   index++;
 
   if (index >= shuffled.length) {
-    alert("Đã hết câu! Shuffle lại.");
+    alert("Hết câu → shuffle lại");
     start();
     return;
   }
 
   showQuestion();
+  speak(); // gọi trong click → iPhone OK
 }
 
 function showQuestion() {
   currentQuestion = shuffled[index];
   document.getElementById("result").innerText = currentQuestion;
-  speak();
 }
 
-// Đọc
 function speak() {
   if (!currentQuestion) return;
 
   const utterance = new SpeechSynthesisUtterance(currentQuestion);
-  utterance.lang = "ja-JP"; // đổi ngôn ngữ tại đây
+  utterance.lang = "ja-JP";
 
   speechSynthesis.cancel();
   speechSynthesis.speak(utterance);
 }
+
 function toggleList() {
   const container = document.getElementById("listContainer");
 
@@ -149,8 +199,6 @@ function renderList() {
     const li = document.createElement("li");
     li.textContent = (i + 1) + ". " + q;
 
-    // click để đọc luôn
-    li.style.cursor = "pointer";
     li.onclick = () => {
       currentQuestion = q;
       document.getElementById("result").innerText = q;
@@ -160,25 +208,18 @@ function renderList() {
     ul.appendChild(li);
   });
 }
+
 function clearAll() {
-  const confirmDelete = confirm("Bạn có chắc muốn xóa toàn bộ câu hỏi?");
+  if (!confirm("Xóa toàn bộ?")) return;
 
-  if (!confirmDelete) return;
-
-  // Xóa localStorage
   localStorage.removeItem("questions");
-
-  // Reset UI
   document.getElementById("questionList").value = "";
-  document.getElementById("result").innerText = "Đã xóa hết!";
+  document.getElementById("result").innerText = "";
   document.getElementById("questionListView").innerHTML = "";
 
-  // Reset trạng thái
   shuffled = [];
   index = 0;
   currentQuestion = "";
-
-  alert("Đã xóa toàn bộ!");
 }
 </script>
 
