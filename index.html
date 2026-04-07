@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Random Question</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      padding: 40px;
+      background: #f5f5f5;
+    }
+    textarea {
+      width: 80%;
+      height: 120px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin: 10px;
+      cursor: pointer;
+    }
+    #result {
+      margin-top: 30px;
+      font-size: 22px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+<h2>🎯 Random Câu Hỏi</h2>
+
+<textarea id="questionList" placeholder="Nhập mỗi câu 1 dòng..."></textarea>
+<br>
+
+<button onclick="start()">▶ Bắt đầu</button>
+<button onclick="nextQuestion()">🎲 Câu tiếp</button>
+<button onclick="speak()">🔊 Đọc</button>
+<button onclick="toggleList()">📋 Xem danh sách</button>
+<button onclick="clearAll()" style="background:red; color:white;">
+  🗑 Xóa tất cả
+</button>
+
+<div id="listContainer" style="display:none; margin-top:20px;">
+  <h3>Danh sách câu hỏi</h3>
+  <ul id="questionListView"></ul>
+</div>
+
+<div id="result">Câu hỏi sẽ hiện ở đây</div>
+
+<script>
+let shuffled = [];
+let index = 0;
+let currentQuestion = "";
+
+// Load từ localStorage khi mở trang
+window.onload = function () {
+  const saved = localStorage.getItem("questions");
+  if (saved) {
+    document.getElementById("questionList").value = saved;
+  }
+};
+
+// Lưu vào localStorage khi nhập
+document.getElementById("questionList").addEventListener("input", function () {
+  localStorage.setItem("questions", this.value);
+});
+
+// Fisher-Yates shuffle
+function shuffle(array) {
+  for (let i = array.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [array[i], array[j]] = [array[j], array[i]];
+  }
+}
+
+// Bắt đầu (shuffle list)
+function start() {
+  const text = document.getElementById("questionList").value;
+  const questions = text.split("\n").filter(q => q.trim() !== "");
+
+  if (questions.length === 0) {
+    alert("Nhập câu hỏi trước!");
+    return;
+  }
+
+  shuffled = [...questions];
+  shuffle(shuffled);
+  index = 0;
+
+  showQuestion();
+}
+
+// Hiển thị câu tiếp theo (không lặp)
+function nextQuestion() {
+  if (shuffled.length === 0) {
+    alert("Bấm 'Bắt đầu' trước!");
+    return;
+  }
+
+  index++;
+
+  if (index >= shuffled.length) {
+    alert("Đã hết câu! Shuffle lại.");
+    start();
+    return;
+  }
+
+  showQuestion();
+}
+
+function showQuestion() {
+  currentQuestion = shuffled[index];
+  document.getElementById("result").innerText = currentQuestion;
+  speak();
+}
+
+// Đọc
+function speak() {
+  if (!currentQuestion) return;
+
+  const utterance = new SpeechSynthesisUtterance(currentQuestion);
+  utterance.lang = "ja-JP"; // đổi ngôn ngữ tại đây
+
+  speechSynthesis.cancel();
+  speechSynthesis.speak(utterance);
+}
+function toggleList() {
+  const container = document.getElementById("listContainer");
+
+  if (container.style.display === "none") {
+    container.style.display = "block";
+    renderList();
+  } else {
+    container.style.display = "none";
+  }
+}
+
+function renderList() {
+  const text = localStorage.getItem("questions") || "";
+  const questions = text.split("\n").filter(q => q.trim() !== "");
+
+  const ul = document.getElementById("questionListView");
+  ul.innerHTML = "";
+
+  questions.forEach((q, i) => {
+    const li = document.createElement("li");
+    li.textContent = (i + 1) + ". " + q;
+
+    // click để đọc luôn
+    li.style.cursor = "pointer";
+    li.onclick = () => {
+      currentQuestion = q;
+      document.getElementById("result").innerText = q;
+      speak();
+    };
+
+    ul.appendChild(li);
+  });
+}
+function clearAll() {
+  const confirmDelete = confirm("Bạn có chắc muốn xóa toàn bộ câu hỏi?");
+
+  if (!confirmDelete) return;
+
+  // Xóa localStorage
+  localStorage.removeItem("questions");
+
+  // Reset UI
+  document.getElementById("questionList").value = "";
+  document.getElementById("result").innerText = "Đã xóa hết!";
+  document.getElementById("questionListView").innerHTML = "";
+
+  // Reset trạng thái
+  shuffled = [];
+  index = 0;
+  currentQuestion = "";
+
+  alert("Đã xóa toàn bộ!");
+}
+</script>
+
+</body>
+</html>
